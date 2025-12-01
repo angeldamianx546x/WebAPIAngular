@@ -1,0 +1,14 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace WebAPIAngular.DTOs
+{
+    public class RolDTO
+    {
+        public string? Nombre { get; set; }
+
+        public string? Descripcion { get; set; }
+    }
+}

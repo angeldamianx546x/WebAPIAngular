@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebAPIAngular.DTOs;
 using WebAPIAngular.Models;
-using WebAPIAngular.wwwroot;
 
 namespace WebAPIAngular.Controllers
 {
@@ -18,53 +17,119 @@ namespace WebAPIAngular.Controllers
         private readonly GamesContext db;
         private readonly IMapper mapper;
 
-        public UsuariosController(GamesContext db, IMapper mapper, IAlmacenamiento almacenamiento)
+        public UsuariosController(GamesContext db, IMapper mapper)
         {
             this.db = db;
             this.mapper = mapper;
         }
 
-        // GET: api/Usuarios
+        // GET: api/Usuarios - Lista simple de usuarios
         [HttpGet]
         public async Task<List<UsuarioDTO>> Get()
         {
-            var usuarios = await db.Usuarios.OrderBy(x => x.Id).ToListAsync();
+            var usuarios = await db.Usuarios
+                .Include(x => x.Rol)
+                .OrderBy(x => x.Id)
+                .ToListAsync();
             return mapper.Map<List<UsuarioDTO>>(usuarios);
         }
 
-        // GET: api/Usuarios/Buscar/5
-        [HttpGet("Buscar/{id:int}")]
+        // GET: api/Usuarios/5 - Usuario individual
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetUsuario(int id)
         {
-            var usuario = await db.Usuarios.FirstOrDefaultAsync(x => x.Id == id);
+            var usuario = await db.Usuarios
+                .Include(x => x.Rol)
+                .FirstOrDefaultAsync(x => x.Id == id);
+            
             if (usuario == null)
                 return NotFound();
 
             return Ok(mapper.Map<UsuarioDTO>(usuario));
         }
 
-        // POST: api/Usuarios
+        // GET: api/Usuarios/Detalle/5 - Usuario con sus videojuegos y compras
+        [HttpGet("Detalle/{id:int}")]
+        public async Task<IActionResult> GetUsuarioDetalle(int id)
+        {
+            var usuario = await db.Usuarios
+                .Include(x => x.Rol)
+                .Include(x => x.Compras)
+                    .ThenInclude(c => c.Videojuego)
+                .Include(x => x.Comentarios)
+                    .ThenInclude(c => c.Videojuego)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (usuario == null)
+                return NotFound();
+
+            var resultado = new
+            {
+                id = usuario.Id,
+                nombre = usuario.Nombre,
+                correo = usuario.Correo,
+                rol = usuario.Rol != null ? new
+                {
+                    id = usuario.Rol.Id,
+                    nombre = usuario.Rol.Nombre,
+                    descripcion = usuario.Rol.Descripcion
+                } : null,
+                videojuegosComprados = usuario.Compras.Select(c => new
+                {
+                    compraId = c.Id,
+                    videojuegoId = c.Videojuego.Id,
+                    nombre = c.Videojuego.Nombre,
+                    precio = c.Videojuego.Precio,
+                    urlImg = c.Videojuego.UrlImg,
+                    fechaCompra = c.FechaCompra
+                }).ToList(),
+                comentarios = usuario.Comentarios.Select(c => new
+                {
+                    comentarioId = c.Id,
+                    videojuegoId = c.Videojuego.Id,
+                    nombreVideojuego = c.Videojuego.Nombre,
+                    comentario = c.ComentarioTexto,
+                    fecha = c.Fecha
+                }).ToList()
+            };
+
+            return Ok(resultado);
+        }
+
+        // POST: api/Usuarios - Crear usuario
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] UsuarioDTOCrear usuarioDTO)
         {
+            // Validar que el rol existe
+            var rolExiste = await db.Roles.AnyAsync(x => x.Id == usuarioDTO.RolId);
+            if (!rolExiste)
+                return BadRequest("El rol especificado no existe.");
+
             var usuario = mapper.Map<Usuario>(usuarioDTO);
             await db.Usuarios.AddAsync(usuario);
             await db.SaveChangesAsync();
-            return Ok();
+            
+            return CreatedAtAction(nameof(GetUsuario), new { id = usuario.Id }, mapper.Map<UsuarioDTO>(usuario));
         }
 
-        // PUT: api/Usuarios/5
+        // PUT: api/Usuarios/5 - Actualizar usuario
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Put(int id, [FromBody] UsuarioDTO usuarioDTO)
+        public async Task<IActionResult> Put(int id, [FromBody] UsuarioDTOCrear usuarioDTO)
         {
-            var existe = await db.Usuarios.AnyAsync(x => x.Id == id);
-            if (!existe)
+            var usuarioExistente = await db.Usuarios.FindAsync(id);
+            if (usuarioExistente == null)
                 return NotFound();
 
-            var usuario = mapper.Map<Usuario>(usuarioDTO);
-            usuario.Id = id;
+            // Validar que el rol existe
+            var rolExiste = await db.Roles.AnyAsync(x => x.Id == usuarioDTO.RolId);
+            if (!rolExiste)
+                return BadRequest("El rol especificado no existe.");
 
-            db.Update(usuario);
+            usuarioExistente.Nombre = usuarioDTO.Nombre ?? usuarioExistente.Nombre;
+            usuarioExistente.Correo = usuarioDTO.Correo ?? usuarioExistente.Correo;
+            usuarioExistente.Contrasena = usuarioDTO.Contrasena ?? usuarioExistente.Contrasena;
+            usuarioExistente.RolId = usuarioDTO.RolId;
+
             await db.SaveChangesAsync();
             return NoContent();
         }
@@ -73,30 +138,37 @@ namespace WebAPIAngular.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var existe = await db.Usuarios.AnyAsync(x => x.Id == id);
-            if (!existe)
+            var usuario = await db.Usuarios.FindAsync(id);
+            if (usuario == null)
                 return NotFound();
 
-            db.Remove(new Usuario { Id = id });
+            db.Usuarios.Remove(usuario);
             await db.SaveChangesAsync();
             return NoContent();
         }
 
-        // GET: api/Usuarios/MostrarTodo
-        [HttpGet("MostrarTodo")]
-        public async Task<IActionResult> MostrarTodo()
+        // GET: api/Usuarios/ConRol - Lista usuarios con información de rol
+        [HttpGet("ConRol")]
+        public async Task<IActionResult> GetUsuariosConRol()
         {
-            return Ok(await db.Usuarios
-        .Include(x => x.Rol) // ⭐ Necesario para cargar el rol
-        .Select(x => new
-        {
-            id = x.Id,
-            nombre = x.Nombre,
-            correo = x.Correo,
-            rol = x.Rol.Nombre   // ⭐ Así obtienes el nombre del rol
-        })
-        .ToListAsync());
-        }
+            var usuarios = await db.Usuarios
+                .Include(x => x.Rol)
+                .OrderBy(x => x.Id)
+                .Select(x => new
+                {
+                    id = x.Id,
+                    nombre = x.Nombre,
+                    correo = x.Correo,
+                    rol = x.Rol != null ? new
+                    {
+                        id = x.Rol.Id,
+                        nombre = x.Rol.Nombre,
+                        descripcion = x.Rol.Descripcion
+                    } : null
+                })
+                .ToListAsync();
 
+            return Ok(usuarios);
+        }
     }
 }

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WebAPIAngular")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a2873cab744d829c8242eb74f6b1db8750b00f10")]
 [assembly: System.Reflection.AssemblyProductAttribute("WebAPIAngular")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WebAPIAngular")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

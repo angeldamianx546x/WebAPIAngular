@@ -264,3 +264,4 @@ C:\frontEnd\Unidad_II\WebAPIAngular\obj\Debug\net9.0\refint\WebAPIAngular.dll
 C:\frontEnd\Unidad_II\WebAPIAngular\obj\Debug\net9.0\WebAPIAngular.pdb
 C:\frontEnd\Unidad_II\WebAPIAngular\obj\Debug\net9.0\WebAPIAngular.genruntimeconfig.cache
 C:\frontEnd\Unidad_II\WebAPIAngular\obj\Debug\net9.0\ref\WebAPIAngular.dll
+C:\frontEnd\Unidad_II\WebAPIAngular\obj\Debug\net9.0\WebAPIAngular.sourcelink.json

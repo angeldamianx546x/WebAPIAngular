@@ -97,7 +97,7 @@ namespace WebAPIAngular.Controllers
                 Precio = juegoForm.Precio,
                 UrlImg = urlCaratula,
                 Descargas = juegoForm.Descargas ?? 0,
-                CreadoEn = DateTime.Now
+                CreadoEn = DateTime.UtcNow
             };
 
             await db.Videojuegos.AddAsync(juego);

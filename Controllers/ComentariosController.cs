@@ -62,7 +62,7 @@ namespace WebAPIAngular.Controllers
                 UsuarioId = comentarioDTO.UsuarioId,
                 VideojuegoId = comentarioDTO.VideojuegoId,
                 ComentarioTexto = comentarioDTO.Comentario,
-                Fecha = DateTime.Now
+                Fecha = DateTime.UtcNow
             };
 
             await db.Comentarios.AddAsync(comentario);
@@ -158,7 +158,7 @@ namespace WebAPIAngular.Controllers
             return Ok(comentarios);
         }
 
-        // PUT: api/Comentarios/5 - Actualizar comentario
+        // PUT: api/Comentarios/5
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Put(int id, [FromBody] string nuevoComentario)
         {
@@ -172,7 +172,7 @@ namespace WebAPIAngular.Controllers
             return Ok(new { mensaje = "Comentario actualizado" });
         }
 
-        // DELETE: api/Comentarios/5 - Eliminar comentario
+        // DELETE: api/Comentarios/5
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {

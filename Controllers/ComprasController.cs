@@ -69,7 +69,7 @@ namespace WebAPIAngular.Controllers
             {
                 UsuarioId = dto.UsuarioId,
                 VideojuegoId = dto.VideojuegoId,
-                FechaCompra = DateTime.Now
+                FechaCompra = DateTime.UtcNow
             };
 
             db.Compras.Add(compra);
